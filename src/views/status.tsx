@@ -1,4 +1,7 @@
 import type { Status } from '../status.js';
+import type { RunStatus } from '../digest/types.js';
+
+const runStatuses: RunStatus[] = ['ok', 'retry', 'fail'];
 
 export function StatusBoard({ status }: { status: Status }) {
   return (
@@ -19,9 +22,17 @@ export function StatusBoard({ status }: { status: Status }) {
         <p class="mute">nothing in runs/</p>
       ) : (
         <ul>
-          {status.nights.map((n) => (
-            <li>{n}</li>
-          ))}
+          {status.nights.map((night) => {
+            const counts = status.nightCounts[night];
+            const summary = runStatuses
+              .map((runStatus) => `${runStatus} ${counts?.[runStatus] ?? '—'}`)
+              .join(' · ');
+            return (
+              <li>
+                <a href={`/digest/${night}`}>{night}</a> · {summary}
+              </li>
+            );
+          })}
         </ul>
       )}
     </>
