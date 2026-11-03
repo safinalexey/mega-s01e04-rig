@@ -28,8 +28,7 @@ export function DigestPage(props: { digest: NightDigest }) {
             </tr>
           </thead>
           <tbody>
-            {[...digest.rows]
-              .sort((a, b) => a.job.localeCompare(b.job))
+            {digest.rows
               .map((row) => {
                 const warning = row.retries >= 3 || row.lastStatus === 'fail';
                 return (
