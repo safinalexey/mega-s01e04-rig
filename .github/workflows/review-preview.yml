@@ -1,0 +1,48 @@
+name: Review preview
+on:
+  workflow_dispatch:
+    inputs:
+      include_marker:
+        description: Include lane marker for initial review (false for cleanup)
+        required: true
+        type: boolean
+        default: false
+permissions:
+  contents: read
+concurrency:
+  group: github-pages
+  cancel-in-progress: false
+jobs:
+  preview:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci
+      - run: npm test && npm run typecheck
+      - name: Export HTML from running rig
+        env:
+          LANE_MARKER: ${{ inputs.include_marker && vars.REVIEW_LANE_MARKER || '' }}
+        run: |
+          if [ "${{ inputs.include_marker }}" = "true" ] && [ -z "$LANE_MARKER" ]; then
+            echo "Missing REVIEW_LANE_MARKER repository variable" >&2
+            exit 1
+          fi
+          node --import tsx scripts/export-preview.ts "$RUNNER_TEMP/rig-preview/index.html"
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: ${{ runner.temp }}/rig-preview
+      - name: Deploy
+        id: deploy
+        uses: actions/deploy-pages@v4
